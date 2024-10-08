@@ -1,4 +1,4 @@
-# Controle de LED e Monitoramento de Luminosidade com ESP32 e MQTT
+# Controle de LED e Monitoramento de Dados do Ambiente com ESP32 e MQTT
 
 <h3>
     Este programa para o ESP32 permite controlar um LED onboard e enviar o status do LED para um Broker MQTT. Além disso, o programa realiza a leitura da temperatura e umidade utilizando um sensor DHT22, publicando esses valores em tópicos apropriados no Broker MQTT. 
