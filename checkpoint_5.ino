@@ -1,24 +1,26 @@
+// Adicionando bibliotecas ao projeto
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include "DHT.h"
 
-#define DHTPIN 4    // Pino onde o DHT22 está conectado
-#define DHTTYPE DHT22 // Tipo do sensor
+#define DHTPIN 4          // Pino onde o DHT22 está conectado
+#define DHTTYPE DHT22     // Tipo do sensor
 
-DHT dht(DHTPIN, DHTTYPE);
+DHT dht(DHTPIN, DHTTYPE); // Instância do sensor DHT
 
 // Configurações - variáveis editáveis
-const char* default_SSID = "Wokwi-GUEST"; // Nome da rede Wi-Fi
-const char* default_PASSWORD = ""; // Senha da rede Wi-Fi
-const char* default_BROKER_MQTT = "54.235.126.90"; // IP do Broker MQTT
-const int default_BROKER_PORT = 1883; // Porta do Broker MQTT
-const char* default_TOPICO_SUBSCRIBE = "/TEF/lamp2005/cmd"; // Tópico MQTT de escuta
-const char* default_TOPICO_PUBLISH_1 = "/TEF/lamp2005/attrs"; // Tópico MQTT de envio de informações para Broker
+const char* default_SSID = "Wokwi-GUEST";                       // Nome da rede Wi-Fi
+const char* default_PASSWORD = "";                              // Senha da rede Wi-Fi
+const char* default_BROKER_MQTT = "54.235.126.90";              // IP do Broker MQTT
+const int default_BROKER_PORT = 1883;                           // Porta do Broker MQTT
+const char* default_TOPICO_SUBSCRIBE = "/TEF/lamp2005/cmd";     // Tópico MQTT de escuta
+const char* default_TOPICO_PUBLISH_1 = "/TEF/lamp2005/attrs";   // Tópico MQTT de envio de informações para Broker
 const char* default_TOPICO_PUBLISH_2 = "/TEF/lamp2005/attrs/l"; // Tópico MQTT de envio de informações para Broker
-const char* default_TOPICO_PUBLISH_3 = "/TEF/lamp2005/attrs/t";
-const char* default_TOPICO_PUBLISH_4 = "/TEF/lamp2005/attrs/h";
-const char* default_ID_MQTT = "fiware_2005"; // ID MQTT
-const int default_D4 = 2; // Pino do LED onboard
+const char* default_TOPICO_PUBLISH_3 = "/TEF/lamp2005/attrs/t"; // Tópico MQTT de envio de informações para Broker
+const char* default_TOPICO_PUBLISH_4 = "/TEF/lamp2005/attrs/h"; // Tópico MQTT de envio de informações para Broker
+const char* default_ID_MQTT = "fiware_2005";                    // ID MQTT
+const int default_D4 = 2;                                       // Pino do LED onboard
+
 // Declaração da variável para o prefixo do tópico
 const char* topicPrefix = "lamp2005";
 
@@ -35,14 +37,19 @@ char* TOPICO_PUBLISH_4 = const_cast<char*>(default_TOPICO_PUBLISH_4);
 char* ID_MQTT = const_cast<char*>(default_ID_MQTT);
 int D4 = default_D4;
 
+// Objetos para Wi-Fi e MQTT
 WiFiClient espClient;
 PubSubClient MQTT(espClient);
+
+// Estado do LED (0: desligado, 1: ligado)
 char EstadoSaida = '0';
 
+// Inicializa a comunicação serial
 void initSerial() {
     Serial.begin(115200);
 }
 
+// Inicializa a conexão Wi-Fi
 void initWiFi() {
     delay(10);
     Serial.println("------Conexao WI-FI------");
@@ -52,11 +59,13 @@ void initWiFi() {
     reconectWiFi();
 }
 
+// Inicializa o cliente MQTT
 void initMQTT() {
     MQTT.setServer(BROKER_MQTT, BROKER_PORT);
     MQTT.setCallback(mqtt_callback);
 }
 
+// Configurações iniciais
 void setup() {
     InitOutput();
     initSerial();
@@ -67,6 +76,7 @@ void setup() {
     MQTT.publish(TOPICO_PUBLISH_1, "s|on");
 }
 
+// Loop principal
 void loop() {
     VerificaConexoesWiFIEMQTT();
     EnviaEstadoOutputMQTT();
@@ -75,6 +85,7 @@ void loop() {
     MQTT.loop();
 }
 
+// Reconecta ao Wi-Fi se não estiver conectado
 void reconectWiFi() {
     if (WiFi.status() == WL_CONNECTED)
         return;
@@ -93,6 +104,7 @@ void reconectWiFi() {
     digitalWrite(D4, LOW);
 }
 
+// Função de callback para receber mensagens MQTT
 void mqtt_callback(char* topic, byte* payload, unsigned int length) {
     String msg;
     for (int i = 0; i < length; i++) {
@@ -118,12 +130,14 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length) {
     }
 }
 
+// Verifica as conexões Wi-Fi e MQTT
 void VerificaConexoesWiFIEMQTT() {
     if (!MQTT.connected())
         reconnectMQTT();
     reconectWiFi();
 }
 
+// Envia o estado do LED via MQTT
 void EnviaEstadoOutputMQTT() {
     if (EstadoSaida == '1') {
         MQTT.publish(TOPICO_PUBLISH_1, "s|on");
@@ -138,6 +152,7 @@ void EnviaEstadoOutputMQTT() {
     delay(1000);
 }
 
+// Inicializa o pino do LED 
 void InitOutput() {
     pinMode(D4, OUTPUT);
     digitalWrite(D4, HIGH);
@@ -150,6 +165,7 @@ void InitOutput() {
     }
 }
 
+// Tenta reconectar ao Broker MQTT
 void reconnectMQTT() {
     while (!MQTT.connected()) {
         Serial.print("* Tentando se conectar ao Broker MQTT: ");
@@ -165,33 +181,43 @@ void reconnectMQTT() {
     }
 }
 
+// Faz leitura da luminosidade e publica no tópico apropriado
 void handleLuminosity() {
+    // Faz leitura e mapeia valores
     const int potPin = 34;
     int sensorValue = analogRead(potPin);
     int luminosity = map(sensorValue, 0, 4095, 0, 100);
+
+    // Converte, imprime e publica os valores de luminosidade
     String mensagem = String(luminosity);
     Serial.print("Valor da luminosidade: ");
     Serial.println(mensagem.c_str());
     MQTT.publish(TOPICO_PUBLISH_2, mensagem.c_str());
 }
 
+// Faz leitura da temperatura e umidade e publica nos tópicos apropriados
 void handleAmbience() {
+  // Realiza a leitura
   float humidity = dht.readHumidity();
   float temperature = dht.readTemperature();
 
+  // Verifica se a leitura falhou
   if (isnan(humidity) || isnan(temperature)) {
     Serial.println("Falha ao ler do DHT sensor!");
     return;
   }
-
+  
+  // Converte os valores para String
   String mensagem_humidity = String(humidity);
   String mensagem_temperature = String(temperature);
   
+  // Imprime e publica os valores de umidade
   Serial.print("Umidade: ");
   Serial.print(mensagem_humidity.c_str());
   Serial.println(" %");
   MQTT.publish(TOPICO_PUBLISH_4, mensagem_humidity.c_str());
 
+  // Imprime e publica os valores de temperatura
   Serial.print("Temperatura: ");
   Serial.print(mensagem_temperature.c_str());
   Serial.println(" °C");
