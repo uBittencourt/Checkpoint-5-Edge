@@ -81,7 +81,7 @@ def update_data_store(n, stored_data):
         humidity_values = [float(entry['attrValue']) for entry in data_humidity]  # Ensure values are floats
         timestamps = [entry['recvTime'] for entry in data_luminosity]
  
-        # Convert timestamps to Lisbon time
+        # Convert timestamps to São Paulo time
         timestamps = convert_to_sao_paulo_time(timestamps)
  
         # Append new data to stored data
@@ -100,7 +100,7 @@ def update_data_store(n, stored_data):
 )
 def update_graph(stored_data):
     if stored_data['timestamps'] and stored_data['luminosity_values'] and stored_data['temperature_values'] and stored_data['humidity_values']:
-        # Calculate mean luminosity
+        # Calculate mean of variables
         mean_luminosity = sum(stored_data['luminosity_values']) / len(stored_data['luminosity_values'])
         mean_temperature = sum(stored_data['temperature_values']) / len(stored_data['temperature_values'])
         mean_humidity = sum(stored_data['humidity_values']) / len(stored_data['humidity_values'])
